@@ -38,3 +38,5 @@ uploads/gallery/*
 uploads/results/*
 !uploads/gallery/.gitkeep
 !uploads/results/.gitkeep
+
+.vercel
