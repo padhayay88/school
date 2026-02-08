@@ -22,21 +22,20 @@ async function seedDatabase() {
 
     console.log('✅ Connected to MongoDB Atlas');
 
-    // Clear existing owners
-    await Owner.deleteMany({});
-    console.log('✅ Cleared existing owners');
-
-    // Create owner account
+    // Create or update owner account (uses upsert - does NOT delete other data)
     const hashedPassword = await bcryptjs.hash('ChangeMe123!', 10);
     
-    const owner = new Owner({
-      email: 'owner@school.local',
-      passwordHash: hashedPassword,
-      tokenVersion: 0
-    });
-
-    await owner.save();
-    console.log('✅ Owner account created successfully!');
+    await Owner.findOneAndUpdate(
+      { email: 'owner@school.local' },
+      { 
+        email: 'owner@school.local',
+        passwordHash: hashedPassword,
+        tokenVersion: 0
+      },
+      { upsert: true, new: true }
+    );
+    
+    console.log('✅ Owner account created/updated successfully!');
     console.log('   Email: owner@school.local');
     console.log('   Password: ChangeMe123!');
 
