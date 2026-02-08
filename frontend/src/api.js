@@ -3,7 +3,7 @@ import axios from "axios";
 const isDevelopment = import.meta.env.MODE === 'development';
 const baseURL = isDevelopment 
   ? "http://localhost:4000/api"
-  : "https://school-six-steel.vercel.app/api";
+  : "https://backend-vert-seven-23.vercel.app/api";
 
 const api = axios.create({
   baseURL: baseURL,
