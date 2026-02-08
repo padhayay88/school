@@ -13,14 +13,14 @@ const ensureConnection = async () => {
   }
 };
 
-// For Vercel serverless
-if (process.env.VERCEL) {
-  module.exports = async (req, res) => {
-    await ensureConnection();
-    return app(req, res);
-  };
-} else {
-  // For local development
+// Vercel serverless handler
+const handler = async (req, res) => {
+  await ensureConnection();
+  return app(req, res);
+};
+
+// For local development
+if (!process.env.VERCEL) {
   const startServer = async () => {
     await connectDB();
     app.listen(port, () => {
@@ -29,3 +29,6 @@ if (process.env.VERCEL) {
   };
   startServer();
 }
+
+// Export for Vercel
+module.exports = handler;
