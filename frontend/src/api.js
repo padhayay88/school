@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const isDevelopment = import.meta.env.MODE === 'development';
+const baseURL = isDevelopment 
+  ? "http://localhost:4000/api"
+  : "https://school-six-steel.vercel.app/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: baseURL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
