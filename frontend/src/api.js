@@ -13,9 +13,13 @@ const api = axios.create({
   },
 });
 
-// Log all requests for debugging
+// Add Authorization header from localStorage
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     console.log("API Request:", config.method?.toUpperCase(), config.url);
     return config;
   },

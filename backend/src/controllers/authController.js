@@ -54,6 +54,8 @@ const loginOwner = async (req, res, next) => {
 
     return res.json({
       owner: { id: owner._id, email: owner.email },
+      accessToken,
+      refreshToken,
     });
   } catch (error) {
     return next(error);
@@ -62,7 +64,8 @@ const loginOwner = async (req, res, next) => {
 
 const refreshToken = async (req, res, next) => {
   try {
-    const token = req.cookies.refreshToken;
+    // Check body first, then cookies for refresh token
+    let token = req.body.refreshToken || req.cookies.refreshToken;
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -83,6 +86,7 @@ const refreshToken = async (req, res, next) => {
 
     return res.json({
       owner: { id: owner._id, email: owner.email },
+      accessToken,
     });
   } catch (error) {
     return res.status(401).json({ message: "Unauthorized" });

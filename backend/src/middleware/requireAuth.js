@@ -2,7 +2,15 @@ const jwt = require("jsonwebtoken");
 const Owner = require("../models/Owner");
 
 const requireAuth = async (req, res, next) => {
-  const token = req.cookies.accessToken;
+  // Check Authorization header first, then cookies
+  let token = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  } else {
+    token = req.cookies.accessToken;
+  }
+  
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }

@@ -8,6 +8,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const loadOwner = async () => {
+    // Check if we have a token first
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.log("No token in localStorage, skipping owner load");
+      setLoading(false);
+      return;
+    }
+    
     try {
       console.log("Loading owner from /auth/me...");
       const { data } = await api.get("/auth/me");
@@ -18,9 +26,14 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data } = await api.post("/auth/refresh");
         console.log("Token refreshed, owner:", data.owner);
+        if (data.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+        }
         setOwner(data.owner);
       } catch (refreshError) {
         console.log("Refresh failed, user not logged in");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setOwner(null);
       }
     } finally {
@@ -41,6 +54,13 @@ export const AuthProvider = ({ children }) => {
       
       if (response.data && response.data.owner) {
         console.log("Setting owner:", response.data.owner);
+        // Store token in localStorage for cross-domain auth
+        if (response.data.accessToken) {
+          localStorage.setItem("accessToken", response.data.accessToken);
+        }
+        if (response.data.refreshToken) {
+          localStorage.setItem("refreshToken", response.data.refreshToken);
+        }
         setOwner(response.data.owner);
       } else {
         console.error("No owner in response data:", response.data);
@@ -63,6 +83,9 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+    // Clear tokens from localStorage
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     setOwner(null);
   };
 
