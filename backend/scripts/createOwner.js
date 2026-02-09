@@ -1,6 +1,10 @@
 const bcrypt = require("bcryptjs");
-const mysql = require("mysql2/promise");
+const mongoose = require("mongoose");
+const path = require("path");
 require("dotenv").config();
+
+// Import Owner model
+const Owner = require("../src/models/Owner");
 
 const run = async () => {
   const email = process.env.OWNER_EMAIL;
@@ -8,27 +12,37 @@ const run = async () => {
 
   if (!email || !password) {
     console.error("Set OWNER_EMAIL and OWNER_PASSWORD in your .env file.");
+    console.error("Example: OWNER_EMAIL=owner@school.com OWNER_PASSWORD=yourpassword");
     process.exit(1);
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-  });
+  try {
+    // Connect to MongoDB
+    const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/school_erp";
+    await mongoose.connect(mongoUri);
+    console.log("Connected to MongoDB");
 
-  await connection.execute(
-    "INSERT INTO owners (email, password_hash) VALUES (?, ?) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)",
-    [email, passwordHash]
-  );
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 12);
+    console.log("Password hashed successfully");
 
-  await connection.end();
-  console.log("Owner account created/updated.");
+    // Find and update or create owner
+    const owner = await Owner.findOneAndUpdate(
+      { email },
+      { email, passwordHash, tokenVersion: 0 },
+      { upsert: true, new: true }
+    );
+
+    console.log("✓ Owner account created/updated successfully");
+    console.log(`  Email: ${owner.email}`);
+    console.log(`  ID: ${owner._id}`);
+    
+    await mongoose.connection.close();
+    console.log("Database connection closed.");
+  } catch (error) {
+    console.error("Error creating owner:", error.message);
+    process.exit(1);
+  }
 };
 
-run().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+run();
