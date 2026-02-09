@@ -95,10 +95,10 @@ const Dashboard = () => {
           width: "100%",
         }}>
           <h1 style={{ margin: 0, fontSize: "2rem", fontWeight: 700, marginBottom: 8 }}>
-            Unique English Boarding School
+            School Management System
           </h1>
           <p style={{ margin: 0, fontSize: "1rem", opacity: 0.95 }}>
-            Principal: Kumkum Upadhyay
+            Comprehensive Educational Management Platform
           </p>
         </div>
       </div>

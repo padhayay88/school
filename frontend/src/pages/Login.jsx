@@ -33,7 +33,7 @@ const Login = () => {
       <Link to="/" className="login-home-link">← Back to Home</Link>
       <form className="login-card" onSubmit={handleSubmit}>
         <div style={{ marginBottom: 24, textAlign: "center" }}>
-          <h2 style={{ margin: 0, color: "#0a1f44" }}>Unique English Boarding School</h2>
+          <h2 style={{ margin: 0, color: "#0a1f44" }}>School Management System</h2>
           <p style={{ margin: "4px 0", color: "#64748b", fontSize: "0.9rem" }}>Admin Dashboard</p>
         </div>
         <h1>Owner Login</h1>

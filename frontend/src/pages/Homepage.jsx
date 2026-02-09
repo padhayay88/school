@@ -29,7 +29,7 @@ const Homepage = () => {
       <header className="header">
         <div className="container">
           <div className="logo">
-            <strong>📚 Unique English Boarding School</strong>
+            <strong>🎓 School Management System</strong>
           </div>
           <nav className="nav">
             <a href="#home">Home</a>
@@ -46,7 +46,7 @@ const Homepage = () => {
       <section className="hero">
         <div className="hero-content">
           <h1>Welcome to</h1>
-          <h2>Unique English Boarding School</h2>
+          <h2>School Management System</h2>
           <p className="tagline">Excellence in Education</p>
           <button className="cta-button">Learn More</button>
         </div>
@@ -199,7 +199,7 @@ const Homepage = () => {
           <div className="footer-content">
             <div className="footer-section">
               <h4>About Us</h4>
-              <p>Unique English Boarding School - Excellence in Education</p>
+              <p>School Management System - Efficient Administration</p>
             </div>
             <div className="footer-section">
               <h4>Quick Links</h4>
@@ -217,7 +217,7 @@ const Homepage = () => {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2026 Unique English Boarding School. All rights reserved.</p>
+            <p>&copy; 2026 School Management System. All rights reserved.</p>
           </div>
         </div>
       </footer>
