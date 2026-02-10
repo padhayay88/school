@@ -1,35 +1,23 @@
 import axios from "axios";
 
-// Dynamic API Base URL detection - works on Vercel and any domain
+// Dynamic API Base URL detection
 const getBaseURL = () => {
   const isDevelopment = import.meta.env.MODE === 'development';
   
   if (isDevelopment) {
-    // Local development
+    // Local development - use backend server
     return "http://localhost:4000/api";
   }
   
-  // Production on Vercel - use specific backend URL
-  // Check if we have a custom backend URL in env
+  // Production - API is on same domain (single Vercel deployment)
+  // If VITE_API_URL is set, use it (for separate deployments)
   const envBackendURL = import.meta.env.VITE_API_URL;
   if (envBackendURL) {
     return envBackendURL;
   }
   
-  // Fallback: Try common Vercel patterns
-  const hostname = window.location.hostname;
-  
-  // If on *.vercel.app, try to construct backend URL
-  if (hostname.includes('vercel.app')) {
-    // Extract project name (e.g., 'myproject' from 'myproject.vercel.app')
-    const projectName = hostname.split('.')[0];
-    // Try backend with -api suffix (common pattern)
-    return `https://${projectName}-api.vercel.app/api`;
-  }
-  
-  // For custom domains - use same domain with /api prefix
-  const protocol = window.location.protocol;
-  return `${protocol}//api.${hostname}`;
+  // Default: Same domain, /api routes
+  return "/api";
 };
 
 const api = axios.create({
