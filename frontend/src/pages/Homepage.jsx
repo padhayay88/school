@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import "../styles/homepage.css";
+import MobileToggle from "../components/MobileToggle";
 
 const Homepage = () => {
   const [notices, setNotices] = useState([]);
@@ -25,6 +26,7 @@ const Homepage = () => {
 
   return (
     <div className="homepage">
+      <MobileToggle />
       {/* Navigation Header */}
       <header className="header">
         <div className="container">

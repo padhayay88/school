@@ -7,11 +7,26 @@ const JWT_SECRET = process.env.JWT_ACCESS_SECRET || "simple-secret-key-12345";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "simple-refresh-key-12345";
 
 // --------------------- MOCK DATA ---------------------
-let students = [
-  { _id: "1", fullName: "Rahul Kumar", className: "10th", section: "A", rollNumber: "101", parentContact: "9876543210", status: "active" },
-  { _id: "2", fullName: "Priya Sharma", className: "10th", section: "A", rollNumber: "102", parentContact: "9876543211", status: "active" },
-  { _id: "3", fullName: "Amit Singh", className: "9th", section: "B", rollNumber: "201", parentContact: "9876543212", status: "active" },
-];
+let students = [];
+let teachers = [];
+let feeStructures = [];
+let payments = [];
+let mobileVersionEnabled = true;
+    // ===================== MOBILE VERSION TOGGLE =====================
+    if (resource === "mobile-version") {
+      if (req.method === "GET") {
+        return res.status(200).json({ mobileVersion: mobileVersionEnabled });
+      }
+      if (req.method === "POST") {
+        const { enabled } = req.body || {};
+        if (typeof enabled === "boolean") {
+          mobileVersionEnabled = enabled;
+          return res.status(200).json({ mobileVersion: mobileVersionEnabled });
+        }
+        return res.status(400).json({ message: "Missing or invalid 'enabled' boolean" });
+      }
+      return res.status(405).json({ message: "Method not allowed" });
+    }
 
 let teachers = [
   { _id: "1", fullName: "Mr. Rajesh Gupta", subject: "Mathematics", classesAssigned: ["9th", "10th"], salary: 35000, status: "active" },
@@ -87,15 +102,12 @@ module.exports = (req, res) => {
   try {
     // ===================== HEALTH =====================
     if (resource === "health") {
-      return res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+      return res.status(200).json({ status: "ok", timestamp: new Date().toISOString(), mobileVersion: mobileVersionEnabled });
     }
 
     // ===================== NOTICES (public) =====================
     if (resource === "notices") {
-      return res.status(200).json([
-        { _id: "1", title: "School Reopening", content: "School will reopen on Monday", date: new Date().toISOString(), important: true },
-        { _id: "2", title: "Annual Day", content: "Annual day celebration on 15th March", date: new Date().toISOString(), important: false },
-      ]);
+      return res.status(200).json({ notices: [], mobileVersion: mobileVersionEnabled });
     }
 
     // ===================== AUTH =====================
@@ -118,6 +130,7 @@ module.exports = (req, res) => {
           `refreshToken=${refreshToken}; Max-Age=604800; ${cookieOpts}`,
         ]);
         return res.status(200).json({ owner: { id: owner.id, email: owner.email }, accessToken, refreshToken });
+        return res.status(200).json({ owner: { id: owner.id, email: owner.email }, accessToken, refreshToken, mobileVersion: mobileVersionEnabled });
       }
 
       // POST /api/auth/logout
@@ -139,6 +152,7 @@ module.exports = (req, res) => {
         const accessToken = generateAccessToken(owner);
         res.setHeader("Set-Cookie", `accessToken=${accessToken}; Max-Age=900; Path=/; HttpOnly; SameSite=Lax`);
         return res.status(200).json({ owner: { id: owner.id, email: owner.email }, accessToken });
+        return res.status(200).json({ owner: { id: owner.id, email: owner.email }, accessToken, mobileVersion: mobileVersionEnabled });
       }
 
       // GET /api/auth/me
@@ -146,6 +160,7 @@ module.exports = (req, res) => {
         const owner = requireAuth(req);
         if (!owner) return res.status(401).json({ message: "Unauthorized" });
         return res.status(200).json({ owner });
+        return res.status(200).json({ owner, mobileVersion: mobileVersionEnabled });
       }
 
       return res.status(404).json({ message: "Auth endpoint not found" });
@@ -162,14 +177,13 @@ module.exports = (req, res) => {
           students: students.length,
           teachers: teachers.length,
           totalFeesCollected: payments.reduce((sum, p) => sum + p.amountPaid, 0),
-          totalPendingFees: 75000,
+          totalPendingFees: 0,
+          mobileVersion: mobileVersionEnabled
         });
       }
       if (subPath === "monthly-fees") {
         return res.status(200).json([
-          { _id: 1, total: 35000 }, { _id: 2, total: 42000 }, { _id: 3, total: 38000 },
-          { _id: 4, total: 45000 }, { _id: 5, total: 50000 }, { _id: 6, total: 40000 },
-        ]);
+        return res.status(200).json({ monthly: [], mobileVersion: mobileVersionEnabled });
       }
       return res.status(404).json({ message: "Not found" });
     }
@@ -180,6 +194,7 @@ module.exports = (req, res) => {
       
       if (!id && req.method === "GET") {
         return res.status(200).json(students);
+        return res.status(200).json({ students, mobileVersion: mobileVersionEnabled });
       }
       if (!id && req.method === "POST") {
         const { fullName, className, section, rollNumber, parentContact, status } = req.body || {};
@@ -189,21 +204,25 @@ module.exports = (req, res) => {
         const student = { _id: Date.now().toString(), fullName, className, section, rollNumber, parentContact, status: status || "active" };
         students.push(student);
         return res.status(201).json(student);
+        return res.status(201).json({ student, mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "GET") {
         const student = students.find(s => s._id === id);
         if (!student) return res.status(404).json({ message: "Not found" });
         return res.status(200).json(student);
+        return res.status(200).json({ student, mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "PUT") {
         const idx = students.findIndex(s => s._id === id);
         if (idx === -1) return res.status(404).json({ message: "Not found" });
         students[idx] = { ...students[idx], ...req.body };
         return res.status(200).json(students[idx]);
+        return res.status(200).json({ student: students[idx], mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "DELETE") {
         students = students.filter(s => s._id !== id);
         return res.status(200).json({ message: "Deleted" });
+        return res.status(200).json({ message: "Deleted", mobileVersion: mobileVersionEnabled });
       }
       return res.status(405).json({ message: "Method not allowed" });
     }
@@ -214,6 +233,7 @@ module.exports = (req, res) => {
       
       if (!id && req.method === "GET") {
         return res.status(200).json(teachers);
+        return res.status(200).json({ teachers, mobileVersion: mobileVersionEnabled });
       }
       if (!id && req.method === "POST") {
         const { fullName, subject, classesAssigned, salary, status } = req.body || {};
@@ -223,17 +243,21 @@ module.exports = (req, res) => {
         const teacher = { _id: Date.now().toString(), fullName, subject, classesAssigned, salary, status: status || "active" };
         teachers.push(teacher);
         return res.status(201).json(teacher);
+        return res.status(201).json({ teacher, mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "GET") {
         const teacher = teachers.find(t => t._id === id);
         if (!teacher) return res.status(404).json({ message: "Not found" });
         return res.status(200).json(teacher);
+        return res.status(200).json({ teacher, mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "PUT") {
         const idx = teachers.findIndex(t => t._id === id);
         if (idx === -1) return res.status(404).json({ message: "Not found" });
         teachers[idx] = { ...teachers[idx], ...req.body };
         return res.status(200).json(teachers[idx]);
+        return res.status(200).json({ teacher: teachers[idx], mobileVersion: mobileVersionEnabled });
+        return res.status(200).json({ message: "Deleted", mobileVersion: mobileVersionEnabled });
       }
       if (id && req.method === "DELETE") {
         teachers = teachers.filter(t => t._id !== id);
@@ -250,6 +274,7 @@ module.exports = (req, res) => {
         
         if (!structureId && req.method === "GET") {
           return res.status(200).json(feeStructures);
+          return res.status(200).json({ feeStructures, mobileVersion: mobileVersionEnabled });
         }
         if (!structureId && req.method === "POST") {
           const { className, amount } = req.body || {};
@@ -259,12 +284,15 @@ module.exports = (req, res) => {
           const structure = { _id: Date.now().toString(), className, amount };
           feeStructures.push(structure);
           return res.status(201).json(structure);
+          return res.status(201).json({ structure, mobileVersion: mobileVersionEnabled });
         }
         if (structureId && req.method === "PUT") {
           const idx = feeStructures.findIndex(f => f._id === structureId);
           if (idx === -1) return res.status(404).json({ message: "Not found" });
           feeStructures[idx] = { ...feeStructures[idx], ...req.body };
           return res.status(200).json(feeStructures[idx]);
+          return res.status(200).json({ structure: feeStructures[idx], mobileVersion: mobileVersionEnabled });
+          return res.status(200).json({ message: "Deleted", mobileVersion: mobileVersionEnabled });
         }
         if (structureId && req.method === "DELETE") {
           feeStructures = feeStructures.filter(f => f._id !== structureId);
@@ -286,6 +314,7 @@ module.exports = (req, res) => {
         
         if (!paymentId && req.method === "GET") {
           return res.status(200).json(payments);
+          return res.status(200).json({ payments, mobileVersion: mobileVersionEnabled });
         }
         if (!paymentId && req.method === "POST") {
           const { studentId, amountPaid, paidOn, status } = req.body || {};
@@ -295,6 +324,11 @@ module.exports = (req, res) => {
           const payment = { _id: Date.now().toString(), studentId, amountPaid, paidOn: paidOn || new Date().toISOString(), status: status || "paid" };
           payments.push(payment);
           return res.status(201).json(payment);
+          return res.status(201).json({ payment, mobileVersion: mobileVersionEnabled });
+          return res.status(200).json({ message: "Deleted", mobileVersion: mobileVersionEnabled });
+          return res.status(200).json({ payments: studentPayments, mobileVersion: mobileVersionEnabled });
+          return res.status(200).json({ students, mobileVersion: mobileVersionEnabled });
+          return res.status(200).json({ payments, mobileVersion: mobileVersionEnabled });
         }
         if (paymentId && req.method === "DELETE") {
           payments = payments.filter(p => p._id !== paymentId);
@@ -315,9 +349,7 @@ module.exports = (req, res) => {
       }
       if (parts[1] === "pending-dues") {
         return res.status(200).json([
-          { fullName: "Rahul Kumar", className: "10th", totalFee: 30000, paid: 15000, due: 15000 },
-          { fullName: "Amit Singh", className: "9th", totalFee: 25000, paid: 5000, due: 20000 },
-        ]);
+        return res.status(200).json({ pendingDues: [], mobileVersion: mobileVersionEnabled });
       }
       return res.status(404).json({ message: "Not found" });
     }
