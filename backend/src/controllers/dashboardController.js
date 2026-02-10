@@ -1,36 +1,13 @@
-const Student = require("../models/Student");
-const Teacher = require("../models/Teacher");
-const FeePayment = require("../models/FeePayment");
-const FeeStructure = require("../models/FeeStructure");
+// SIMPLE MODE: No database - returns mock data
 
 const getSummary = async (req, res, next) => {
   try {
-    const studentCount = await Student.countDocuments();
-    const teacherCount = await Teacher.countDocuments();
-    const feeCollected = await FeePayment.aggregate([
-      { $group: { _id: null, total: { $sum: "$amountPaid" } } }
-    ]);
-
-    const students = await Student.find();
-    const feeStructures = await FeeStructure.find();
-    const payments = await FeePayment.find({ status: 'paid' });
-
-    let totalPendingFees = 0;
-    students.forEach(student => {
-      const structure = feeStructures.find(fs => fs.className === student.className);
-      if (structure) {
-        const totalPaid = payments
-          .filter(p => p.studentId.toString() === student._id.toString())
-          .reduce((acc, p) => acc + p.amountPaid, 0);
-        totalPendingFees += (structure.amount - totalPaid);
-      }
-    });
-
+    // Mock data for testing
     res.json({
-      students: studentCount,
-      teachers: teacherCount,
-      totalFeesCollected: feeCollected[0]?.total || 0,
-      totalPendingFees: totalPendingFees > 0 ? totalPendingFees : 0,
+      students: 150,
+      teachers: 12,
+      totalFeesCollected: 450000,
+      totalPendingFees: 75000,
     });
   } catch (error) {
     next(error);
@@ -39,15 +16,15 @@ const getSummary = async (req, res, next) => {
 
 const getMonthlyFeeCollection = async (req, res, next) => {
   try {
-    const monthlyData = await FeePayment.aggregate([
-      {
-        $group: {
-          _id: { $month: "$paidOn" },
-          total: { $sum: "$amountPaid" }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    // Mock monthly data
+    const monthlyData = [
+      { _id: 1, total: 35000 },
+      { _id: 2, total: 42000 },
+      { _id: 3, total: 38000 },
+      { _id: 4, total: 45000 },
+      { _id: 5, total: 50000 },
+      { _id: 6, total: 40000 },
+    ];
     res.json(monthlyData);
   } catch (error) {
     next(error);

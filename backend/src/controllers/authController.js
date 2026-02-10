@@ -1,6 +1,10 @@
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Owner = require("../models/Owner");
+
+// SIMPLE MODE: No database needed - hardcoded credentials for testing
+const OWNER_EMAIL = process.env.OWNER_EMAIL || "owner@school.local";
+const OWNER_PASSWORD = process.env.OWNER_PASSWORD || "ChangeMe123!";
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || "simple-secret-key-12345";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "simple-refresh-key-12345";
 
 const buildCookieOptions = () => ({
   httpOnly: true,
@@ -11,16 +15,16 @@ const buildCookieOptions = () => ({
 
 const generateAccessToken = (owner) =>
   jwt.sign(
-    { ownerId: owner._id, email: owner.email },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRES || "15m" }
+    { ownerId: owner.id, email: owner.email },
+    JWT_SECRET,
+    { expiresIn: "15m" }
   );
 
 const generateRefreshToken = (owner) =>
   jwt.sign(
-    { ownerId: owner._id, tokenVersion: owner.tokenVersion },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES || "7d" }
+    { ownerId: owner.id, tokenVersion: 1 },
+    JWT_REFRESH_SECRET,
+    { expiresIn: "7d" }
   );
 
 const loginOwner = async (req, res, next) => {
@@ -30,32 +34,28 @@ const loginOwner = async (req, res, next) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const owner = await Owner.findOne({ email });
-    if (!owner) {
+    // Simple credential check - no database needed
+    if (email !== OWNER_EMAIL || password !== OWNER_PASSWORD) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, owner.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
+    const owner = { id: "owner-1", email: OWNER_EMAIL };
     const accessToken = generateAccessToken(owner);
-    const refreshToken = generateRefreshToken(owner);
+    const refreshTokenValue = generateRefreshToken(owner);
 
     res.cookie("accessToken", accessToken, {
       ...buildCookieOptions(),
       maxAge: 1000 * 60 * 15,
     });
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("refreshToken", refreshTokenValue, {
       ...buildCookieOptions(),
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     return res.json({
-      owner: { id: owner._id, email: owner.email },
+      owner: { id: owner.id, email: owner.email },
       accessToken,
-      refreshToken,
+      refreshToken: refreshTokenValue,
     });
   } catch (error) {
     return next(error);
@@ -70,13 +70,8 @@ const refreshToken = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const owner = await Owner.findById(payload.ownerId);
-
-    if (!owner || owner.tokenVersion !== payload.tokenVersion) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+    const payload = jwt.verify(token, JWT_REFRESH_SECRET);
+    const owner = { id: payload.ownerId, email: OWNER_EMAIL };
     const accessToken = generateAccessToken(owner);
 
     res.cookie("accessToken", accessToken, {
@@ -85,7 +80,7 @@ const refreshToken = async (req, res, next) => {
     });
 
     return res.json({
-      owner: { id: owner._id, email: owner.email },
+      owner: { id: owner.id, email: owner.email },
       accessToken,
     });
   } catch (error) {

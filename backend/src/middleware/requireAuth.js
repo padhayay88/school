@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
-const Owner = require("../models/Owner");
+
+// SIMPLE MODE: No database needed
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || "simple-secret-key-12345";
 
 const requireAuth = async (req, res, next) => {
   // Check Authorization header first, then cookies
@@ -16,12 +18,8 @@ const requireAuth = async (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    const owner = await Owner.findById(payload.ownerId).select("-passwordHash");
-    if (!owner) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    req.owner = { id: owner._id, email: owner.email };
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.owner = { id: payload.ownerId, email: payload.email };
     next();
   } catch (error) {
     // This could be an expired token
