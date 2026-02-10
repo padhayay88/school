@@ -89,17 +89,14 @@ const requireAuth = (req) => {
 
 // --------------------- HANDLER ---------------------
 module.exports = (req, res) => {
-  const origin = req.headers.origin;
-  setCorsHeaders(res, origin);
-  
-  if (req.method === "OPTIONS") return res.status(200).end();
-
-  const url = req.url.split("?")[0];
-  const parts = url.replace(/^\/api\/?/, "").split("/").filter(Boolean);
-  const resource = parts[0] || "";
-  const subPath = parts.slice(1).join("/");
-
   try {
+    const origin = req.headers.origin;
+    setCorsHeaders(res, origin);
+    if (req.method === "OPTIONS") return res.status(200).end();
+    const url = req.url.split("?")[0];
+    const parts = url.replace(/^\/api\/?/, "").split("/").filter(Boolean);
+    const resource = parts[0] || "";
+    const subPath = parts.slice(1).join("/");
     // ===================== HEALTH =====================
     if (resource === "health") {
       return res.status(200).json({ status: "ok", timestamp: new Date().toISOString(), mobileVersion: mobileVersionEnabled });
@@ -358,7 +355,14 @@ module.exports = (req, res) => {
     return res.status(404).json({ message: "Endpoint not found" });
 
   } catch (error) {
+    try {
+      setCorsHeaders(res, req.headers?.origin);
+    } catch {}
     console.error("API Error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(200).json({
+      success: false,
+      message: "Something went wrong, but your request was received. Please try again later or contact support.",
+      mobileVersion: typeof mobileVersionEnabled !== 'undefined' ? mobileVersionEnabled : true
+    });
   }
 };
